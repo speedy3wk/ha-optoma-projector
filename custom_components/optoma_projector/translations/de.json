@@ -1,0 +1,139 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Optoma Projektor Einrichtung",
+        "description": "Gib die IP-Adresse deines Optoma Projektors ein.",
+        "data": {
+          "host": "IP-Adresse",
+          "name": "Name",
+          "model": "Modell"
+        },
+        "data_description": {
+          "host": "Die IP-Adresse deines Optoma Projektors",
+          "name": "Ein Anzeigename für den Projektor",
+          "model": "Der Modellname (z.B. UHD50X, UHZ50, CinemaX P2)"
+        }
+      },
+      "reconfigure": {
+        "title": "Optoma Projektor neu konfigurieren",
+        "description": "Aktualisiere die Verbindungseinstellungen für deinen Optoma Projektor.",
+        "data": {
+          "host": "IP-Adresse",
+          "name": "Name",
+          "model": "Modell"
+        },
+        "data_description": {
+          "host": "Die IP-Adresse deines Optoma Projektors",
+          "name": "Ein Anzeigename für den Projektor",
+          "model": "Der Modellname (z.B. UHD50X, UHZ50, CinemaX P2)"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Verbindung zum Projektor fehlgeschlagen",
+      "timeout": "Verbindungs-Timeout",
+      "invalid_response": "Ungültige Antwort vom Projektor",
+      "unknown": "Unerwarteter Fehler"
+    },
+    "abort": {
+      "already_configured": "Dieser Projektor ist bereits konfiguriert"
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Optoma Projektor Optionen",
+        "description": "Konfiguriere das Abfrageintervall und Verhalten für den Projektor.",
+        "data": {
+          "scan_interval": "Abfrageintervall",
+          "optimistic": "Optimistischer Modus",
+          "telnet_fallback": "Telnet-Fallback",
+          "projector_id": "Projektor-ID"
+        },
+        "data_description": {
+          "scan_interval": "Wie oft der Projektor nach Statusupdates abgefragt wird (in Sekunden)",
+          "optimistic": "UI sofort aktualisieren ohne auf Bestätigung vom Projektor zu warten. Macht die Oberfläche schneller, aber der Status kann kurz falsch sein wenn ein Befehl fehlschlägt.",
+          "telnet_fallback": "Telnet/RS232 als Fallback für Power-Befehle nutzen wenn HTTP fehlschlägt. Nützlich wenn der Projektor im Deep-Standby ist. Telnet muss im Projektor aktiviert sein (Control → Telnet → On).",
+          "projector_id": "RS232 Projektor-ID (0-99). Nutze 0 für Broadcast an alle Projektoren. Muss mit der ID im Projektor-Menü übereinstimmen."
+        }
+      }
+    }
+  },
+  "entity": {
+    "switch": {
+      "power": { "name": "Strom" },
+      "av_mute": { "name": "AV Stummschaltung" },
+      "freeze": { "name": "Standbild" },
+      "info_hide": { "name": "Info ausblenden" },
+      "high_altitude": { "name": "Höhenmodus" },
+      "keypad_lock": { "name": "Tastensperre" },
+      "display_mode_lock": { "name": "Anzeigemodus-Sperre" },
+      "direct_power_on": { "name": "Direkteinschaltung" },
+      "trigger_12v": { "name": "12V Trigger" },
+      "signal_power_on": { "name": "Signal-Einschaltung" },
+      "warping": { "name": "Warping" },
+      "sync_3d_invert": { "name": "3D Sync invertieren" },
+      "speaker_enable": { "name": "Interner Lautsprecher" },
+      "mute_audio": { "name": "Ton stumm" },
+      "dynamic_black": { "name": "Dynamic Black" },
+      "always_on": { "name": "Immer an" }
+    },
+    "select": {
+      "input_source": { "name": "Eingangsquelle" },
+      "audio_input": { "name": "Audioeingang" },
+      "mode_3d": { "name": "3D Modus" },
+      "mode_3d_to_2d": { "name": "3D zu 2D" },
+      "mode_3d_format": { "name": "3D Format" },
+      "picture_mode": { "name": "Bildmodus" },
+      "color_space": { "name": "Farbraum" },
+      "gamma": { "name": "Gamma" },
+      "color_temperature": { "name": "Farbtemperatur" },
+      "aspect_ratio": { "name": "Seitenverhältnis" },
+      "projection_mode": { "name": "Projektionsmodus" },
+      "background_color": { "name": "Hintergrundfarbe" },
+      "wall_color": { "name": "Wandfarbe" },
+      "startup_logo": { "name": "Startlogo" },
+      "power_mode": { "name": "Energiemodus" },
+      "light_source_mode": { "name": "Lichtquellenmodus" }
+    },
+    "number": {
+      "volume": { "name": "Lautstärke" },
+      "mic_volume": { "name": "Mikrofonlautstärke" },
+      "brightness": { "name": "Helligkeit" },
+      "contrast": { "name": "Kontrast" },
+      "sharpness": { "name": "Schärfe" },
+      "phase": { "name": "Phase" },
+      "brilliant_color": { "name": "Brilliant Color" },
+      "zoom_value": { "name": "Zoom" },
+      "h_keystone": { "name": "Horizontale Trapezkorrektur" },
+      "v_keystone": { "name": "Vertikale Trapezkorrektur" },
+      "h_shift": { "name": "Horizontale Verschiebung" },
+      "v_shift": { "name": "Vertikale Verschiebung" },
+      "sleep_timer": { "name": "Sleep Timer" },
+      "projector_id": { "name": "Projektor ID" },
+      "remote_code": { "name": "Fernbedienungscode" }
+    },
+    "button": {
+      "resync": { "name": "Resync" },
+      "reset": { "name": "Zurücksetzen" },
+      "logo_capture": { "name": "Logo erfassen" },
+      "corner_reset": { "name": "Eckenkorrektur zurücksetzen" }
+    },
+    "sensor": {
+      "light_source_hours": { "name": "Lichtquellen-Stunden" },
+      "filter_hours": { "name": "Filterstunden" },
+      "last_update": { "name": "Letzte Aktualisierung" },
+      "power_state": {
+        "name": "Betriebszustand",
+        "state": {
+          "standby": "Standby",
+          "on": "An",
+          "warming": "Aufwärmen",
+          "cooling": "Abkühlen",
+          "unknown": "Unbekannt"
+        }
+      }
+    }
+  }
+}

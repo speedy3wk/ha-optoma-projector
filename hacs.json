@@ -1,0 +1,7 @@
+{
+  "name": "Optoma Projector",
+  "homeassistant": "2025.1.0",
+  "render_readme": true,
+  "zip_release": true,
+  "filename": "optoma_projector.zip"
+}

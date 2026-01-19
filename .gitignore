@@ -1,0 +1,4 @@
+.DS_Store
+.venv/
+.playwright-mcp/
+projector_probe_full.log
