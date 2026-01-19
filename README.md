@@ -21,7 +21,8 @@ Native Home Assistant integration for Optoma UHD Laser projectors with web contr
 1. Open HACS in Home Assistant
 2. Click on "Integrations"
 3. Click the three dots menu → "Custom repositories"
-4. Add this repository URL and select "Integration"
+4. Add this repository URL and select "Integration":
+	- https://github.com/speedy3wk/ha-optoma-projector
 5. Search for "Optoma Projector" and install
 6. Restart Home Assistant
 
