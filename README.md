@@ -42,10 +42,16 @@ Native Home Assistant integration for Optoma UHD Laser projectors with web contr
 ## Options
 
 After setup, you can configure:
-- **Polling interval** (seconds)
+- **Polling interval** (scan interval, seconds)
 - **Optimistic mode** (instant UI updates while commands are in flight)
 - **Telnet fallback** for power commands (requires projector Telnet enabled)
 - **Projector ID** (RS232/Telnet ID 0–99)
+
+Defaults and behavior:
+- Default polling interval is **4s**
+- During **warming/cooling**, polling speeds up to **2s**
+- In **standby**, polling slows down to **12s**
+- After toggle commands, a short refresh is triggered (~0.8s) to sync state
 
 ## Entities
 
@@ -136,12 +142,11 @@ The projector returns a non-standard JSON format with unquoted keys:
 This is automatically converted to valid JSON.
 
 ### Power States
-| Value | State | Description |
-|-------|-------|-------------|
-| 0 | Standby | Projector is off |
-| 1 | On | Projector is running |
-| 2 | Warming | Starting up (commands blocked) |
-| 3 | Cooling | Shutting down (commands blocked) |
+
+- **0** — Standby (projector is off)
+- **1** — On (projector is running)
+- **2** — Warming (starting up, commands blocked)
+- **3** — Cooling (shutting down, commands blocked)
 
 ## Development
 
