@@ -2,3 +2,5 @@
 .venv/
 .playwright-mcp/
 projector_probe_full.log
+.github/
+tools/

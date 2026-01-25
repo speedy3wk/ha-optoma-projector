@@ -150,13 +150,8 @@ This is automatically converted to valid JSON.
 
 ## Development
 
-This integration was created with AI tools and reviewed/edited by humans.
+This integration was created with AI tools and reviewed/edited by me.
 
 ## License
 
 MIT License
-
-## Credits
-
-Based on analysis of the Optoma web control protocol.
-This integration was completely generated with AI tools and reviewed/edited by humans.
