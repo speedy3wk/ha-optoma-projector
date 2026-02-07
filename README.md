@@ -2,6 +2,14 @@
 
 Native Home Assistant integration for Optoma UHD Laser projectors with web control interface.
 
+## Home Assistant 2026.2 note (entity_id changes)
+
+Home Assistant 2026.2 tightened entity ID restrictions. Entity IDs must contain only lowercase letters, numbers, and underscores.
+
+If you previously had entities created with an invalid entity ID (for example containing dashes), this integration will automatically migrate/rename them to a valid ID on startup.
+
+As a consequence, any automations/scripts/dashboards referencing the old entity IDs will need to be updated.
+
 ## Features
 
 - **Power Control** - Turn projector on/off
