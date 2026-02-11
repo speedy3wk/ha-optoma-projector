@@ -1,13 +1,13 @@
 {
   "domain": "optoma_projector",
   "name": "Optoma Projector",
-  "documentation": "https://github.com/speedy3wk/ha-optoma-projector",
-  "issue_tracker": "https://github.com/speedy3wk/ha-optoma-projector/issues",
   "codeowners": ["@speedy3wk"],
   "config_flow": true,
   "dependencies": [],
+  "documentation": "https://github.com/speedy3wk/ha-optoma-projector",
   "integration_type": "device",
   "iot_class": "local_polling",
+  "issue_tracker": "https://github.com/speedy3wk/ha-optoma-projector/issues",
   "requirements": [],
   "version": "0.1.2"
 }
