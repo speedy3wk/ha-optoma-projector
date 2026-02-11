@@ -4,7 +4,7 @@
 [![Release](https://img.shields.io/github/v/release/speedy3wk/ha-optoma-projector.svg)](https://github.com/speedy3wk/ha-optoma-projector/releases)
 [![Built with AI](https://img.shields.io/badge/Built%20with-AI-blue.svg)](https://github.com/features/copilot)
 
-Simple, friendly Home Assistant control for Optoma projectors that expose the web control interface. Created with AI. Fully tested on Optoma ZK708T.
+Home Assistant control for Optoma projectors that expose the web control interface. Created with AI. Fully tested on Optoma ZK708T.
 
 ## Highlights
 
