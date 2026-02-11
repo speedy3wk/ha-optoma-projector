@@ -1,6 +1,8 @@
 {
   "domain": "optoma_projector",
   "name": "Optoma Projector",
+  "documentation": "https://github.com/speedy3wk/ha-optoma-projector",
+  "issue_tracker": "https://github.com/speedy3wk/ha-optoma-projector/issues",
   "codeowners": ["@speedy3wk"],
   "config_flow": true,
   "dependencies": [],
