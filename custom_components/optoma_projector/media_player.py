@@ -18,6 +18,7 @@ from .const import (
     KEY_VOLUME,
     POWER_STATE_COOLING,
     POWER_STATE_ON,
+    POWER_STATE_STANDBY,
     POWER_STATE_WARMING,
     SELECTS,
     VALUE_NOT_AVAILABLE,
@@ -149,26 +150,30 @@ class OptomaMediaPlayer(OptomaEntity, MediaPlayerEntity):
         # Update optimistically for instant UI feedback
         if self.coordinator.optimistic:
             self._optimistic_power = True
-            self.coordinator.update_optimistic(KEY_POWER, "1")
+            self.coordinator.update_optimistic(KEY_POWER, POWER_STATE_ON)
             self.async_write_ha_state()
-
-        await self.coordinator.async_power_on()
-
-        # Clear optimistic state after command completes
-        self._optimistic_power = None
+        try:
+            await self.coordinator.async_power_on()
+        finally:
+            # Clear optimistic state after command completes
+            self._optimistic_power = None
+            if self.coordinator.optimistic:
+                self.async_write_ha_state()
 
     async def async_turn_off(self) -> None:
         """Turn the projector off."""
         # Update optimistically for instant UI feedback
         if self.coordinator.optimistic:
             self._optimistic_power = False
-            self.coordinator.update_optimistic(KEY_POWER, "0")
+            self.coordinator.update_optimistic(KEY_POWER, POWER_STATE_STANDBY)
             self.async_write_ha_state()
-
-        await self.coordinator.async_power_off()
-
-        # Clear optimistic state after command completes
-        self._optimistic_power = None
+        try:
+            await self.coordinator.async_power_off()
+        finally:
+            # Clear optimistic state after command completes
+            self._optimistic_power = None
+            if self.coordinator.optimistic:
+                self.async_write_ha_state()
 
     async def async_select_source(self, source: str) -> None:
         """Select input source."""

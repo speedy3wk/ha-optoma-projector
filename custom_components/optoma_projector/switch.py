@@ -11,7 +11,13 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from . import OptomaConfigEntry
-from .const import KEY_POWER, SWITCHES, VALUE_NOT_AVAILABLE
+from .const import (
+    KEY_POWER,
+    POWER_STATE_ON,
+    POWER_STATE_STANDBY,
+    SWITCHES,
+    VALUE_NOT_AVAILABLE,
+)
 from .coordinator import OptomaCoordinator
 from .entity import OptomaEntity
 
@@ -98,13 +104,15 @@ class OptomaPowerSwitch(OptomaEntity, SwitchEntity):
         # Update optimistically for instant UI feedback
         if self.coordinator.optimistic:
             self._optimistic_state = True
-            self.coordinator.update_optimistic(KEY_POWER, "1")
+            self.coordinator.update_optimistic(KEY_POWER, POWER_STATE_ON)
             self.async_write_ha_state()
-        
-        await self.coordinator.async_power_on()
-        
-        # Clear optimistic state after command completes
-        self._optimistic_state = None
+        try:
+            await self.coordinator.async_power_on()
+        finally:
+            # Clear optimistic state after command completes
+            self._optimistic_state = None
+            if self.coordinator.optimistic:
+                self.async_write_ha_state()
 
     async def async_turn_off(self, **kwargs: Any) -> None:
         """Turn the projector off."""
@@ -115,13 +123,15 @@ class OptomaPowerSwitch(OptomaEntity, SwitchEntity):
         # Update optimistically for instant UI feedback
         if self.coordinator.optimistic:
             self._optimistic_state = False
-            self.coordinator.update_optimistic(KEY_POWER, "0")
+            self.coordinator.update_optimistic(KEY_POWER, POWER_STATE_STANDBY)
             self.async_write_ha_state()
-        
-        await self.coordinator.async_power_off()
-        
-        # Clear optimistic state after command completes
-        self._optimistic_state = None
+        try:
+            await self.coordinator.async_power_off()
+        finally:
+            # Clear optimistic state after command completes
+            self._optimistic_state = None
+            if self.coordinator.optimistic:
+                self.async_write_ha_state()
 
 
 class OptomaToggleSwitch(OptomaEntity, SwitchEntity):
@@ -183,10 +193,11 @@ class OptomaToggleSwitch(OptomaEntity, SwitchEntity):
             # Give the projector a moment, then refresh to sync state
             await asyncio.sleep(0.8)
             await self.coordinator.async_request_refresh()
-            
+        finally:
             # Clear optimistic state after command completes
             self._optimistic_state = None
-        finally:
+            if self.coordinator.optimistic:
+                self.async_write_ha_state()
             self._command_in_progress = False
 
     async def async_turn_off(self, **kwargs: Any) -> None:
@@ -209,8 +220,9 @@ class OptomaToggleSwitch(OptomaEntity, SwitchEntity):
             # Give the projector a moment, then refresh to sync state
             await asyncio.sleep(0.8)
             await self.coordinator.async_request_refresh()
-            
+        finally:
             # Clear optimistic state after command completes
             self._optimistic_state = None
-        finally:
+            if self.coordinator.optimistic:
+                self.async_write_ha_state()
             self._command_in_progress = False

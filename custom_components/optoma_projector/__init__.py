@@ -153,7 +153,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: OptomaConfigEntry) -> bo
 
 async def async_unload_entry(hass: HomeAssistant, entry: OptomaConfigEntry) -> bool:
     """Unload a config entry."""
-    # Shutdown the coordinator to close HTTP session
-    coordinator: OptomaCoordinator = entry.runtime_data
-    await coordinator.async_shutdown()
-    return await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
+    unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
+    if unload_ok:
+        # Shutdown the coordinator to close HTTP session
+        coordinator: OptomaCoordinator = entry.runtime_data
+        await coordinator.async_shutdown()
+    return unload_ok
