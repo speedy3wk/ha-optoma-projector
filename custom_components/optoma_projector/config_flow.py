@@ -1,12 +1,11 @@
 """Config flow for Optoma Projector integration."""
+
 from __future__ import annotations
 
 import logging
 from typing import Any
 
 import aiohttp
-import voluptuous as vol
-
 from homeassistant.config_entries import (
     ConfigEntry,
     ConfigFlow,
@@ -14,7 +13,8 @@ from homeassistant.config_entries import (
     OptionsFlowWithReload,
 )
 from homeassistant.const import CONF_HOST, CONF_NAME, CONF_SCAN_INTERVAL
-from homeassistant.core import callback
+from homeassistant.core import HomeAssistant, callback
+from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.selector import (
     BooleanSelector,
     NumberSelector,
@@ -23,6 +23,7 @@ from homeassistant.helpers.selector import (
     TextSelector,
     TextSelectorConfig,
 )
+import voluptuous as vol
 
 from .const import (
     CMD_QUERY,
@@ -31,7 +32,6 @@ from .const import (
     CONF_PROJECTOR_ID,
     CONF_TELNET_FALLBACK,
     CONTROL_PATH,
-    COOKIE,
     DEFAULT_MODEL,
     DEFAULT_NAME,
     DEFAULT_OPTIMISTIC,
@@ -40,64 +40,82 @@ from .const import (
     DEFAULT_SCAN_INTERVAL,
     DEFAULT_TELNET_FALLBACK,
     DOMAIN,
+    NEW_WEB_UI_PORT,
+    NEW_WEB_UI_PROBE_TIMEOUT,
 )
+from .coordinator import REQUEST_HEADERS, parse_response
 
 _LOGGER = logging.getLogger(__name__)
 
-STEP_USER_DATA_SCHEMA = vol.Schema(
-    {
-        vol.Required(CONF_HOST): TextSelector(TextSelectorConfig()),
-        vol.Optional(CONF_NAME, default=DEFAULT_NAME): TextSelector(
-            TextSelectorConfig()
-        ),
-        vol.Optional(CONF_MODEL, default=DEFAULT_MODEL): TextSelector(
-            TextSelectorConfig()
-        ),
-    }
-)
+
+def _connection_schema(defaults: dict[str, Any]) -> vol.Schema:
+    return vol.Schema(
+        {
+            vol.Required(CONF_HOST, default=defaults.get(CONF_HOST, vol.UNDEFINED)): (
+                TextSelector(TextSelectorConfig())
+            ),
+            vol.Optional(CONF_NAME, default=defaults.get(CONF_NAME, DEFAULT_NAME)): (
+                TextSelector(TextSelectorConfig())
+            ),
+            vol.Optional(CONF_MODEL, default=defaults.get(CONF_MODEL, DEFAULT_MODEL)): (
+                TextSelector(TextSelectorConfig())
+            ),
+        }
+    )
 
 
-async def validate_connection(host: str) -> dict[str, str]:
-    """Validate the user input allows us to connect."""
-    errors: dict[str, str] = {}
-
+async def _async_has_new_web_ui(hass: HomeAssistant, host: str) -> bool:
+    """Return True if the newer HTTPS web UI (port 8088) answers on this host."""
+    session = async_get_clientsession(hass, verify_ssl=False)
     try:
-        # Use unsafe cookie jar for IP-based hosts
-        cookie_jar = aiohttp.CookieJar(unsafe=True)
-        connector = aiohttp.TCPConnector(limit=1)
-        async with aiohttp.ClientSession(
-            cookie_jar=cookie_jar, connector=connector
-        ) as session:
-            url = f"http://{host}:{DEFAULT_PORT}{CONTROL_PATH}"
-            headers = {
-                "Content-Type": "application/x-www-form-urlencoded",
-                "Cookie": COOKIE,
-            }
+        async with session.get(
+            f"https://{host}:{NEW_WEB_UI_PORT}/",
+            timeout=aiohttp.ClientTimeout(total=NEW_WEB_UI_PROBE_TIMEOUT),
+            allow_redirects=False,
+        ):
+            return True
+    except (TimeoutError, aiohttp.ClientError, OSError) as err:
+        _LOGGER.debug("No HTTPS web UI on %s:%s: %s", host, NEW_WEB_UI_PORT, err)
+        return False
 
-            async with session.post(
-                url,
-                data=CMD_QUERY,
-                headers=headers,
-                timeout=aiohttp.ClientTimeout(total=5),
-            ) as response:
-                text = await response.text()
-                if "{" not in text or "}" not in text:
-                    errors["base"] = "invalid_response"
+
+async def validate_connection(hass: HomeAssistant, host: str) -> dict[str, str]:
+    """Validate that the projector's web control interface answers."""
+    error: str | None = None
+    session = async_get_clientsession(hass)
+    try:
+        async with session.post(
+            f"http://{host}:{DEFAULT_PORT}{CONTROL_PATH}",
+            data=CMD_QUERY,
+            headers=REQUEST_HEADERS,
+            timeout=aiohttp.ClientTimeout(total=10),
+            allow_redirects=False,
+        ) as response:
+            text = await response.text()
     except TimeoutError:
-        errors["base"] = "timeout"
-    except aiohttp.ClientError:
-        errors["base"] = "cannot_connect"
-    except Exception:  # noqa: BLE001
+        error = "timeout"
+    except aiohttp.ClientError, OSError:
+        error = "cannot_connect"
+    except Exception:
         _LOGGER.exception("Unexpected exception")
-        errors["base"] = "unknown"
+        return {"base": "unknown"}
+    else:
+        if parse_response(text) is None:
+            error = "invalid_response"
 
-    return errors
+    if error is None:
+        return {}
+    if await _async_has_new_web_ui(hass, host):
+        _LOGGER.debug("%s runs the newer HTTPS web UI, which is not supported", host)
+        return {"base": "unsupported_model"}
+    return {"base": error}
 
 
 class OptomaConfigFlow(ConfigFlow, domain=DOMAIN):
     """Handle a config flow for Optoma Projector."""
 
     VERSION = 1
+    MINOR_VERSION = 2
 
     @staticmethod
     @callback
@@ -112,13 +130,12 @@ class OptomaConfigFlow(ConfigFlow, domain=DOMAIN):
         errors: dict[str, str] = {}
 
         if user_input is not None:
-            # Use host as unique_id for now (will be updated to MAC if available)
+            user_input[CONF_HOST] = user_input[CONF_HOST].strip()
+            # No stable hardware ID is available from the projector, so use the host
             await self.async_set_unique_id(user_input[CONF_HOST])
             self._abort_if_unique_id_configured()
 
-            # Validate connection
-            errors = await validate_connection(user_input[CONF_HOST])
-
+            errors = await validate_connection(self.hass, user_input[CONF_HOST])
             if not errors:
                 return self.async_create_entry(
                     title=user_input.get(CONF_NAME, DEFAULT_NAME),
@@ -127,7 +144,9 @@ class OptomaConfigFlow(ConfigFlow, domain=DOMAIN):
 
         return self.async_show_form(
             step_id="user",
-            data_schema=STEP_USER_DATA_SCHEMA,
+            data_schema=self.add_suggested_values_to_schema(
+                _connection_schema({}), user_input
+            ),
             errors=errors,
         )
 
@@ -139,32 +158,23 @@ class OptomaConfigFlow(ConfigFlow, domain=DOMAIN):
         reconfigure_entry = self._get_reconfigure_entry()
 
         if user_input is not None:
-            # Validate new connection
-            errors = await validate_connection(user_input[CONF_HOST])
+            host = user_input[CONF_HOST] = user_input[CONF_HOST].strip()
+            if host != reconfigure_entry.data[CONF_HOST]:
+                await self.async_set_unique_id(host)
+                self._abort_if_unique_id_configured()
 
+            errors = await validate_connection(self.hass, host)
             if not errors:
                 return self.async_update_reload_and_abort(
                     reconfigure_entry,
+                    unique_id=host,
                     data_updates=user_input,
                 )
 
-        # Pre-fill with current values
         return self.async_show_form(
             step_id="reconfigure",
-            data_schema=vol.Schema(
-                {
-                    vol.Required(
-                        CONF_HOST, default=reconfigure_entry.data.get(CONF_HOST)
-                    ): TextSelector(TextSelectorConfig()),
-                    vol.Optional(
-                        CONF_NAME,
-                        default=reconfigure_entry.data.get(CONF_NAME, DEFAULT_NAME),
-                    ): TextSelector(TextSelectorConfig()),
-                    vol.Optional(
-                        CONF_MODEL,
-                        default=reconfigure_entry.data.get(CONF_MODEL, DEFAULT_MODEL),
-                    ): TextSelector(TextSelectorConfig()),
-                }
+            data_schema=_connection_schema(
+                user_input if user_input is not None else dict(reconfigure_entry.data)
             ),
             errors=errors,
         )

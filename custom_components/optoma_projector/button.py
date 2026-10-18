@@ -1,4 +1,5 @@
 """Button platform for Optoma Projector."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -6,14 +7,12 @@ from dataclasses import dataclass
 from homeassistant.components.button import ButtonEntity, ButtonEntityDescription
 from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
-from . import OptomaConfigEntry
 from .const import BUTTONS
-from .coordinator import OptomaCoordinator
-from .entity import OptomaEntity
+from .coordinator import OptomaConfigEntry, OptomaCoordinator
+from .entity import OptomaPoweredEntity
 
-# Limit concurrent platform updates (projector can only handle one request at a time)
 PARALLEL_UPDATES = 1
 
 
@@ -38,7 +37,7 @@ BUTTON_DESCRIPTIONS: tuple[OptomaButtonEntityDescription, ...] = tuple(
 async def async_setup_entry(
     hass: HomeAssistant,
     entry: OptomaConfigEntry,
-    async_add_entities: AddEntitiesCallback,
+    async_add_entities: AddConfigEntryEntitiesCallback,
 ) -> None:
     """Set up Optoma buttons."""
     coordinator = entry.runtime_data
@@ -48,7 +47,7 @@ async def async_setup_entry(
     )
 
 
-class OptomaButton(OptomaEntity, ButtonEntity):
+class OptomaButton(OptomaPoweredEntity, ButtonEntity):
     """Button entity for Optoma projector."""
 
     entity_description: OptomaButtonEntityDescription
@@ -61,11 +60,6 @@ class OptomaButton(OptomaEntity, ButtonEntity):
         """Initialize the button."""
         super().__init__(coordinator, description.key)
         self.entity_description = description
-
-    @property
-    def available(self) -> bool:
-        """Return if entity is available (only when projector is on)."""
-        return self.coordinator.last_update_success and self.coordinator.is_on
 
     async def async_press(self) -> None:
         """Handle button press."""

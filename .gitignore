@@ -2,3 +2,6 @@
 .venv/
 .playwright-mcp/
 tools/
+.pytest_cache/
+.ruff_cache/
+__pycache__/

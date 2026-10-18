@@ -1,4 +1,5 @@
 """Constants for the Optoma Projector integration."""
+
 from typing import Final
 
 DOMAIN: Final = "optoma_projector"
@@ -22,6 +23,16 @@ DEFAULT_OPTIMISTIC: Final = False
 # Minimum delay between commands to projector (prevents request collisions)
 MIN_COMMAND_INTERVAL: Final = 0.2  # 200ms is safe for modern projectors
 
+# Consecutive failed polls tolerated before entities become unavailable
+MAX_CONSECUTIVE_FAILURES: Final = 3
+# Delay before re-reading state after a command (projector applies changes asynchronously)
+COMMAND_REFRESH_DELAY: Final = 1.0
+# Keep fast polling this long after a power command to catch the transition
+POWER_COMMAND_FAST_POLL: Final = 30
+# Probe for the newer HTTPS web UI generation (not supported by this integration)
+NEW_WEB_UI_PORT: Final = 8088
+NEW_WEB_UI_PROBE_TIMEOUT: Final = 5
+
 # Telnet fallback settings
 CONF_TELNET_FALLBACK: Final = "telnet_fallback"
 CONF_PROJECTOR_ID: Final = "projector_id"
@@ -42,17 +53,15 @@ TELNET_STATUS_WARMING: Final = 1
 TELNET_STATUS_COOLING: Final = 2
 TELNET_STATUS_READY: Final = 24  # System ready = ON
 
-# Connection pool settings
-CONNECTION_LIMIT: Final = 2  # Max simultaneous connections to projector
-CONNECTION_LIMIT_PER_HOST: Final = 1  # Only 1 connection at a time to same host
-
 # API constants
 CONTROL_PATH: Final = "/form/control_cgi"
 COOKIE: Final = "atop=1"
 
 # Commands
 CMD_QUERY: Final = "QueryControl=QueryControl"
-CMD_QUERY_INFO: Final = "QueryInfo=QueryInfo"  # Query device info (model, firmware, etc.)
+CMD_QUERY_INFO: Final = (
+    "QueryInfo=QueryInfo"  # Query device info (model, firmware, etc.)
+)
 CMD_POWER_ON: Final = "btn_powon=btn_powon"
 CMD_POWER_OFF: Final = "btn_powoff=btn_powoff"
 
@@ -63,6 +72,11 @@ KEY_VOLUME: Final = "m"
 KEY_BRIGHTNESS: Final = "c"
 KEY_CONTRAST: Final = "d"
 KEY_PICTURE_MODE: Final = "b"
+KEY_MUTE: Final = "j"
+
+CMD_MUTE: Final = "mute=mute"
+PARAM_SOURCE: Final = "source"
+PARAM_VOLUME: Final = "vol"
 
 # Power states - Optoma projectors report these values
 # 0 = Standby, 1 = On, 2 = Warming Up, 3 = Cooling Down
@@ -81,8 +95,8 @@ POWER_STATES: Final = {
 # Value returned by projector for "not available" fields
 VALUE_NOT_AVAILABLE: Final = "255"
 
-# Lock timeout for async operations (seconds)
-LOCK_TIMEOUT: Final = 15  # Increased for slow projector responses
+# Max time to wait for the request lock (seconds)
+LOCK_TIMEOUT: Final = 30
 
 # Switch definitions: (id, name, state_key, command, is_toggle)
 SWITCHES: Final = [

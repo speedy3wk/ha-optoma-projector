@@ -10,7 +10,7 @@ jobs:
     name: HACS
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: HACS Validation
         uses: hacs/action@main
         with:
@@ -20,6 +20,25 @@ jobs:
     name: Hassfest
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Hassfest Validation
         uses: home-assistant/actions/hassfest@master
+
+  tests:
+    name: Lint & Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.14"
+          cache: pip
+          cache-dependency-path: requirements_test.txt
+      - name: Install dependencies
+        run: pip install -r requirements_test.txt
+      - name: Ruff
+        run: |
+          ruff check custom_components tests
+          ruff format --check custom_components tests
+      - name: Pytest
+        run: pytest

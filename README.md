@@ -6,6 +6,8 @@
 
 Home Assistant control for Optoma projectors that expose the web control interface. Created with AI. Fully tested on Optoma ZK708T.
 
+Requires Home Assistant 2026.10 or newer.
+
 ## Highlights
 
 - Power, source, volume, mute
@@ -37,12 +39,14 @@ Home Assistant control for Optoma projectors that expose the web control interfa
 
 - Polling interval (seconds)
 - Optimistic mode for UI updates
-- Telnet fallback for power commands (requires projector Telnet enabled)
+- Telnet fallback for power commands and power state (requires projector Telnet enabled)
 - Projector ID (RS232/Telnet ID 0-99)
 
 Behavior notes:
 - Polling: 4s default, 2s warming/cooling, 12s standby
-- After toggles, a short refresh runs (~0.8s)
+- After every command, a short refresh runs (~1s)
+- Entities become unavailable after 3 consecutive failed polls
+- With Telnet fallback enabled, the power state is read via Telnet when the web interface does not answer (e.g. deep standby), so the projector can still be switched on
 
 ## Entities
 
@@ -55,12 +59,14 @@ Configuration (examples):
 - Brightness, contrast, zoom, keystone, shift
 
 Diagnostics:
-- Light source hours, filter hours, power state, last update
+- Light source hours, filter hours, power state, last update (disabled by default)
+- Hour sensors are unavailable if the projector does not report them
 
 ## Supported Models and Notes
 
 - Tested with Optoma ZK708T (UHD 4K Laser)
-- Should work with any Optoma projector that exposes `/form/control_cgi`
+- Should work with any Optoma projector that exposes `/form/control_cgi` on port 80
+- Not supported: newer models whose web interface only runs via HTTPS on port 8088. The setup dialog reports these as unsupported.
 - Some settings return `255` when not available for a specific model
 - Deep standby can require Telnet fallback for power commands
 
@@ -76,6 +82,7 @@ Cannot connect:
 - Confirm the projector is on and reachable
 - Open `http://<projector-ip>/index_login.asp`
 - Check port 80 is not blocked
+- "Unsupported model": the projector uses the newer HTTPS web interface (port 8088), which this integration cannot control
 
 Entities unavailable:
 - Most configuration entities are unavailable in standby
@@ -87,6 +94,15 @@ Slow response:
 ## Protocol Notes
 
 Requests are HTTP POST to `/form/control_cgi` with `Cookie: atop=1`. Responses are a non-standard JSON format (unquoted keys) that is normalized internally.
+
+## Development
+
+```bash
+python3.14 -m venv .venv
+.venv/bin/pip install -r requirements_test.txt
+.venv/bin/ruff check custom_components tests
+.venv/bin/pytest
+```
 
 ## License
 

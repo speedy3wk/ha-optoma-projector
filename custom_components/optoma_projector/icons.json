@@ -130,7 +130,8 @@
         "state": {
           "on": "mdi:power",
           "standby": "mdi:power-standby",
-          "unknown": "mdi:help-circle"
+          "warming": "mdi:thermometer-chevron-up",
+          "cooling": "mdi:thermometer-chevron-down"
         }
       }
     }

@@ -1,4 +1,5 @@
 """Select platform for Optoma Projector."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -6,14 +7,12 @@ from dataclasses import dataclass
 from homeassistant.components.select import SelectEntity, SelectEntityDescription
 from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
-from . import OptomaConfigEntry
 from .const import SELECTS, VALUE_NOT_AVAILABLE
-from .coordinator import OptomaCoordinator
-from .entity import OptomaEntity
+from .coordinator import OptomaConfigEntry, OptomaCoordinator
+from .entity import OptomaPoweredEntity
 
-# Limit concurrent platform updates (projector can only handle one request at a time)
 PARALLEL_UPDATES = 1
 
 
@@ -59,7 +58,7 @@ SELECT_DESCRIPTIONS = _build_select_descriptions()
 async def async_setup_entry(
     hass: HomeAssistant,
     entry: OptomaConfigEntry,
-    async_add_entities: AddEntitiesCallback,
+    async_add_entities: AddConfigEntryEntitiesCallback,
 ) -> None:
     """Set up Optoma selects."""
     coordinator = entry.runtime_data
@@ -69,7 +68,7 @@ async def async_setup_entry(
     )
 
 
-class OptomaSelect(OptomaEntity, SelectEntity):
+class OptomaSelect(OptomaPoweredEntity, SelectEntity):
     """Select entity for Optoma projector."""
 
     entity_description: OptomaSelectEntityDescription
@@ -82,16 +81,8 @@ class OptomaSelect(OptomaEntity, SelectEntity):
         """Initialize the select."""
         super().__init__(coordinator, description.key)
         self.entity_description = description
+        self._state_key = description.state_key
         self._attr_options = description.options
-
-    @property
-    def available(self) -> bool:
-        """Return if entity is available (only when projector is on)."""
-        return (
-            self.coordinator.last_update_success
-            and self.coordinator.is_on
-            and self.coordinator.is_key_available(self.entity_description.state_key)
-        )
 
     @property
     def current_option(self) -> str | None:
@@ -105,6 +96,7 @@ class OptomaSelect(OptomaEntity, SelectEntity):
 
     async def async_select_option(self, option: str) -> None:
         """Select an option."""
-        value = self.entity_description.reverse_map.get(option)
-        if value is not None:
-            await self.coordinator.async_set_value(self.entity_description.param, value)
+        value = self.entity_description.reverse_map[option]
+        await self.coordinator.async_set_value(
+            self.entity_description.param, value, state_key=self._state_key
+        )

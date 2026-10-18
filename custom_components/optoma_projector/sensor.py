@@ -1,9 +1,10 @@
 """Sensor platform for Optoma Projector."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Any
+from typing import Any, ClassVar
 
 from homeassistant.components.sensor import (
     SensorDeviceClass,
@@ -13,49 +14,41 @@ from homeassistant.components.sensor import (
 )
 from homeassistant.const import EntityCategory, UnitOfTime
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
-from . import OptomaConfigEntry
-from .const import KEY_POWER, POWER_STATES, VALUE_NOT_AVAILABLE
-from .coordinator import OptomaCoordinator
+from .const import POWER_STATES, VALUE_NOT_AVAILABLE
+from .coordinator import OptomaConfigEntry, OptomaCoordinator
 from .entity import OptomaEntity
 
-# Limit concurrent platform updates (projector can only handle one request at a time)
-PARALLEL_UPDATES = 1
+PARALLEL_UPDATES = 0
 
 
 @dataclass(frozen=True, kw_only=True)
 class OptomaSensorEntityDescription(SensorEntityDescription):
-    """Describes Optoma sensor entity."""
+    """Describes Optoma hour sensor entity."""
 
-    state_key: str | None = None
-    # Alternative keys to check if primary key is not found
-    fallback_keys: tuple[str, ...] = ()
+    # Candidate keys in the projector response; key names differ across models
+    state_keys: tuple[str, ...]
 
 
 SENSOR_DESCRIPTIONS: tuple[OptomaSensorEntityDescription, ...] = (
     OptomaSensorEntityDescription(
         key="light_source_hours",
         translation_key="light_source_hours",
-        # Common keys for lamp/laser hours across different Optoma models
-        state_key="n",
-        fallback_keys=("lamphrs", "lamp_hours", "laser_hours", "LampHrs"),
+        state_keys=("n", "lamphrs", "lamp_hours", "laser_hours", "LampHrs"),
         native_unit_of_measurement=UnitOfTime.HOURS,
         device_class=SensorDeviceClass.DURATION,
         state_class=SensorStateClass.TOTAL_INCREASING,
         entity_category=EntityCategory.DIAGNOSTIC,
-        icon="mdi:lightbulb-on-outline",
     ),
     OptomaSensorEntityDescription(
         key="filter_hours",
         translation_key="filter_hours",
-        state_key="F19",
-        fallback_keys=("filterhrs", "filter_hours", "FilterHrs"),
+        state_keys=("F19", "filterhrs", "filter_hours", "FilterHrs"),
         native_unit_of_measurement=UnitOfTime.HOURS,
         device_class=SensorDeviceClass.DURATION,
         state_class=SensorStateClass.TOTAL_INCREASING,
         entity_category=EntityCategory.DIAGNOSTIC,
-        icon="mdi:air-filter",
     ),
 )
 
@@ -63,25 +56,23 @@ SENSOR_DESCRIPTIONS: tuple[OptomaSensorEntityDescription, ...] = (
 async def async_setup_entry(
     hass: HomeAssistant,
     entry: OptomaConfigEntry,
-    async_add_entities: AddEntitiesCallback,
+    async_add_entities: AddConfigEntryEntitiesCallback,
 ) -> None:
     """Set up Optoma sensors."""
     coordinator = entry.runtime_data
-
     entities: list[SensorEntity] = [
         OptomaLastUpdateSensor(coordinator),
         OptomaPowerStateSensor(coordinator),
     ]
-
     entities.extend(
-        OptomaSensor(coordinator, description) for description in SENSOR_DESCRIPTIONS
+        OptomaHoursSensor(coordinator, description)
+        for description in SENSOR_DESCRIPTIONS
     )
-
     async_add_entities(entities)
 
 
-class OptomaSensor(OptomaEntity, SensorEntity):
-    """Sensor entity for Optoma projector."""
+class OptomaHoursSensor(OptomaEntity, SensorEntity):
+    """Usage hours; unavailable if the projector does not report them."""
 
     entity_description: OptomaSensorEntityDescription
 
@@ -94,74 +85,66 @@ class OptomaSensor(OptomaEntity, SensorEntity):
         super().__init__(coordinator, description.key)
         self.entity_description = description
 
-    @property
-    def native_value(self) -> float | str | None:
-        """Return the sensor value."""
-        if not self.coordinator.data:
-            return None
-
-        # Try primary key first
-        if self.entity_description.state_key:
-            value = self.coordinator.data.get(self.entity_description.state_key)
-            if value is not None:
-                return self._convert_value(value)
-
-        # Try fallback keys
-        for key in self.entity_description.fallback_keys:
-            value = self.coordinator.data.get(key)
-            if value is not None:
-                return self._convert_value(value)
-
+    def _raw_value(self) -> int | None:
+        data = self.coordinator.data or {}
+        for key in self.entity_description.state_keys:
+            value = data.get(key)
+            if value is None or value == VALUE_NOT_AVAILABLE:
+                continue
+            try:
+                return int(float(value))
+            except TypeError, ValueError:
+                continue
         return None
 
-    def _convert_value(self, value: str) -> float | str | None:
-        """Convert value to appropriate type."""
-        # 255 means "not available" for this projector
-        if value == VALUE_NOT_AVAILABLE:
-            return None
-        try:
-            return float(value)
-        except (ValueError, TypeError):
-            return str(value)
+    @property
+    def available(self) -> bool:
+        """Return True if the projector reports this value."""
+        return super().available and self._raw_value() is not None
+
+    @property
+    def native_value(self) -> int | None:
+        """Return the hours."""
+        return self._raw_value()
 
 
 class OptomaLastUpdateSensor(OptomaEntity, SensorEntity):
-    """Last update timestamp sensor."""
+    """Timestamp of the last successful update."""
 
     _attr_entity_category = EntityCategory.DIAGNOSTIC
     _attr_device_class = SensorDeviceClass.TIMESTAMP
-    _attr_translation_key = "last_update"
+    _attr_entity_registry_enabled_default = False
 
     def __init__(self, coordinator: OptomaCoordinator) -> None:
         """Initialize the sensor."""
         super().__init__(coordinator, "last_update")
 
     @property
+    def available(self) -> bool:
+        """Stay available so the last success stays visible during outages."""
+        return True
+
+    @property
     def native_value(self) -> datetime | None:
-        """Return the last update time."""
-        # last_update_success_time may not exist in older HA versions
-        return getattr(self.coordinator, "last_update_success_time", None)
+        """Return the last successful update time."""
+        return self.coordinator.last_update_success_time
 
 
 class OptomaPowerStateSensor(OptomaEntity, SensorEntity):
-    """Power state sensor showing human-readable power status."""
+    """Power state (standby, on, warming, cooling)."""
 
     _attr_entity_category = EntityCategory.DIAGNOSTIC
-    _attr_translation_key = "power_state"
-    _attr_icon = "mdi:power"
+    _attr_device_class = SensorDeviceClass.ENUM
+    _attr_options: ClassVar[list[str]] = list(POWER_STATES.values())
 
     def __init__(self, coordinator: OptomaCoordinator) -> None:
         """Initialize the sensor."""
         super().__init__(coordinator, "power_state")
 
     @property
-    def native_value(self) -> str:
+    def native_value(self) -> str | None:
         """Return the power state."""
-        if not self.coordinator.data:
-            return "unknown"
-
-        power_value = self.coordinator.data.get(KEY_POWER)
-        return POWER_STATES.get(power_value, "unknown")
+        return self.coordinator.power_state
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:

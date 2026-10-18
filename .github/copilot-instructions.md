@@ -13,8 +13,11 @@
 ## Project-specific patterns
 - Entity metadata uses translation_key and a shared OptomaEntity base (custom_components/optoma_projector/entity.py). The main media player removes translation_key and uses device name.
 - Select/Number/Button/Switch entities are generated from const lists (SELECTS, NUMBERS, BUTTONS, SWITCHES in custom_components/optoma_projector/const.py).
-- Optimistic UI updates are used for power/source/volume and switches when the optimistic option is enabled.
-- Limit concurrent platform updates with PARALLEL_UPDATES = 1 across entity platforms.
+- Optimistic UI updates are handled centrally in the coordinator (async_set_value, async_toggle, async_power_on/off) when the optimistic option is enabled; failures roll back and raise translated HomeAssistantError.
+- Toggles are never retried on connection errors and their (pre-toggle) responses are ignored; a follow-up refresh reads the new state. Idempotency (skip if already in target state, incl. unconfirmed pending toggles) lives in OptomaCoordinator.async_toggle.
+- Entities that need the projector to be on derive from OptomaPoweredEntity (entity.py).
+- Unique IDs are `<entry_id>_<key>`; the device identifier is (DOMAIN, entry_id).
+- PARALLEL_UPDATES = 1 for platforms that send commands; 0 for read-only sensors.
 
 ## Integration details to respect
 - HTTP session is persistent and refreshed on login redirects; commands are throttled (MIN_COMMAND_INTERVAL) and serialized with an async lock.
@@ -29,5 +32,6 @@
 - Diagnostics redaction: custom_components/optoma_projector/diagnostics.py
 
 ## Developer workflow hints
-- This is a Home Assistant custom integration; no local build/test commands are defined in repo. Validate changes by running HA with the integration loaded.
+- Lint: `.venv/bin/ruff check custom_components tests` and `.venv/bin/ruff format custom_components tests`.
+- Tests: `.venv/bin/pytest` (pytest-homeassistant-custom-component, see requirements_test.txt; Python 3.14). tests/conftest.py contains a FakeProjector emulating the CGI.
 - For supported models and protocol notes, see README.md.
