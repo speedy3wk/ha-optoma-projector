@@ -1,6 +1,6 @@
 # Optoma Projector
 
-[![HACS Custom](https://img.shields.io/badge/HACS-Custom-orange.svg)](https://github.com/hacs/integration)
+[![HACS Default](https://img.shields.io/badge/HACS-Default-blue.svg)](https://www.hacs.xyz/)
 [![Release](https://img.shields.io/github/v/release/speedy3wk/ha-optoma-projector.svg)](https://github.com/speedy3wk/ha-optoma-projector/releases)
 [![Built with AI](https://img.shields.io/badge/Built%20with-AI-blue.svg)](https://github.com/features/copilot)
 
@@ -19,10 +19,15 @@ Requires Home Assistant 2026.10 or newer.
 
 ### HACS
 
-1. HACS → Integrations → menu → Custom repositories
-2. Add: https://github.com/speedy3wk/ha-optoma-projector (Integration)
-3. Install "Optoma Projector"
-4. Restart Home Assistant
+Optoma Projector is included in the HACS default repository list. No custom repository is needed.
+
+[![Open in HACS](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=speedy3wk&repository=ha-optoma-projector&category=integration)
+
+1. Open HACS and search for **Optoma Projector**, or use the button above.
+2. Download the integration and restart Home Assistant.
+3. Add the integration under **Settings → Devices & Services** as described below.
+
+HACS must already be installed. The integration requires Home Assistant 2026.10 or newer.
 
 ### Manual
 
