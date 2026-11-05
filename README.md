@@ -19,7 +19,9 @@ Requires Home Assistant 2026.10 or newer.
 
 ### Marketplace (recommended, Home Assistant 2026.11+)
 
-Since Home Assistant 2026.11, HACS is built in as the [Marketplace](https://www.home-assistant.io/integrations/marketplace/). No separate HACS installation is needed.
+The [Marketplace](https://www.home-assistant.io/integrations/marketplace/) is built into Home Assistant 2026.11 and newer.
+
+[![Open in Marketplace](https://my.home-assistant.io/badges/marketplace_repository.svg)](https://my.home-assistant.io/redirect/marketplace_repository/?owner=speedy3wk&repository=ha-optoma-projector&category=integration)
 
 1. Open **Settings → Marketplace** as an administrator and accept the community-content warning if prompted.
 2. Search for **Optoma Projector**, open its page and select **Install**.
@@ -27,21 +29,10 @@ Since Home Assistant 2026.11, HACS is built in as the [Marketplace](https://www.
 
 If the integration is not listed, select **Add from link** in the Marketplace, enter `https://github.com/speedy3wk/ha-optoma-projector` and select **Add**. Connect GitHub if prompted, then install it from its repository page.
 
-Existing HACS installations migrate automatically when updating to Home Assistant 2026.11; installed integrations and their update entities are kept. Integration updates still require a Home Assistant restart.
+Integration updates still require a Home Assistant restart.
 
-### HACS (Home Assistant versions before 2026.11)
-
-For older supported Home Assistant versions, use the following legacy HACS instructions.
-
-Optoma Projector is included in the HACS default repository list. No custom repository is needed.
-
-[![Open in HACS](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=speedy3wk&repository=ha-optoma-projector&category=integration)
-
-1. Open HACS and search for **Optoma Projector**, or use the button above.
-2. Download the integration and restart Home Assistant.
-3. Add the integration under **Settings → Devices & Services** as described below.
-
-HACS must already be installed. The integration requires Home Assistant 2026.10 or newer.
+On older supported Home Assistant versions, install **Optoma Projector** through HACS and restart before adding the integration.
+Existing HACS installations migrate automatically to the Marketplace when updating to Home Assistant 2026.11.
 
 ### Manual
 
