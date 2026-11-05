@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.1
+- Update installation documentation and buttons for the built-in Marketplace in Home Assistant 2026.11.
+- Keep a short HACS compatibility note for older supported Home Assistant versions.
+- Include local brand icons and logos.
+- No integration behavior changes.
+
 ## 0.2.0
 Requires Home Assistant 2026.10 or newer.
 
